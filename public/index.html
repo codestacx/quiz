@@ -9,7 +9,7 @@
   </head>
   <body>
     <div id="center" style="width: 300px; margin: 0 auto; margin-top: 100px;">
-      <label><h3>Choose Quiz</h3> </label>
+     
       <h1>
         Score :
         <span id="score" style="color: red; margin-right: 20px;">0</span>
@@ -17,6 +17,7 @@
       </h1>
       <hr />
       <br />
+      <label><h3>Choose Quiz</h3> </label>
       <span id="dropdown"></span>
     </div>
     <div
@@ -44,12 +45,13 @@
       </h3>
 
       <form id="quiz" style="margin-left: 100px;">
-        <ol>
+        <ul>
           <li>
             <span id="question_to_show"></span>
           </li>
         </ol>
-
+        <br/>
+        <br/>
         <input
           type="button"
           class="nextbtn"
@@ -72,6 +74,7 @@
     var correct_score = 0;
     var total = 0;
     var timer;
+   
     $(document).ready(function () {
       var quiz_id = null;
       var question_id = null;
@@ -96,8 +99,10 @@
           "/" +
           user_answer,
         type: "GET",
+        async:false,
         contentType: "application/json",
-        success: function (response) {
+        success:   function (response) {
+
           if (response.correct === false) {
             Swal.fire("Oops", "You answer is wrong", "error");
           } else {
@@ -192,8 +197,9 @@
 
     // function to parse the textual question
     function parseTextQuestion(response) {
+      
       var html = "";
-      html += "<div><h3>" + response.question + "</h3><br/>";
+      html += "<div><h3>"+ response.question + "</h3><br/>";
       html +=
         '<input type="text" style="width:250px; padding:10px;placeholder="Enter Answer"; margin:10px " name="question_text"/>';
       html += "<div>";
@@ -222,14 +228,13 @@
 
     //function to parse the Multi-choice question
     function parseQuestion(response) {
+      
       var html = "";
-      html += "<div><h3>" + response.question + "</h3>";
+      html += "<div><h3>" +response.question + "</h3>";
       var options = ["A", "B", "C", "D"];
       for (var i = 0; i < response.answer_options.length; i++) {
         html +=
-          '<input type="radio"  data=' +
-          i +
-          ' name="question_option" id=""  value=' +
+          '<input type="radio" name="question_option" id=""  value=' +
           options[i] +
           "  />";
         html += ' <label for="question-1-answers-A">';
