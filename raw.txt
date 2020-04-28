@@ -1,0 +1,145 @@
+router.post(
+    '/quiz',
+    async (req, res) => {
+      
+      const { title, description } = req.body;
+  
+      try {
+        // See if user exists
+        
+         
+
+          const questions = [
+            {
+                question:'Which of the following is correct about Hex Code format of CSS colors?',
+                questionid:'1',
+                meta:{
+                    next_question:'2'
+                },
+                question_type:'multiple_choice',
+                answer_options:['The first two digits(RR) represent a red value.',
+                'The next two are a green value(GG).',
+                'The last are the blue value(BB).','All of the above']
+                        
+              },
+              {
+                question:'How do you add a comment in a CSS file?',
+                questionid:'2',
+                meta:{
+                    next_question:'3'
+                },
+                question_type:'multiple_choice',
+                answer_options:['/* this is comment */','*/this is comment /*','/* this is comment /*','none']
+                        
+              },
+              {
+                question:'Which is the correct CSS syntax?',
+                questionid:'3',
+                meta:{
+                    next_question:'4'
+                },
+                question_type:'multiple_choice',
+                answer_options:['body:color=black','{body;color:black}','{body:color=black(body}','body {color: black}']
+                        
+              },
+              {
+                question:'What is the correct HTML for inserting an image?',
+                questionid:'4',
+                meta:{
+                   next_question:'5'
+                },
+                question_type:'multiple_choice',
+                answer_options:["<img alt='MyImage' image.gif /img>",'<image csrc="image.gif" alt="MyImage">','<img src="image.gif" alt="MyImage">','<img href="image.gif" alt="MyImage">']
+                        
+              },
+              {
+                question:'How can you make a list that lists the items with numbers?',
+                questionid:'5',
+                meta:{
+                   next_question:'6'
+                },
+                question_type:'multiple_choice',
+                answer_options:['ol','dl','ul','list']
+                        
+              },
+              {
+                question:' Choose the correct HTML tag for the largest heading',
+                questionid:'6',
+                meta:{
+                   next_question:'-1'
+                },
+                question_type:'multiple_choice',
+                answer_options:['h1','h2','h3','h4']
+                        
+              }
+          ]
+
+          const answers = [
+            {
+                questionid:'1',
+                 answer : 'd',
+                
+                feedback:'correct answer is All of the  Above'
+            },
+            {
+                questionid:'2',
+                answer : 'a',
+                
+                feedback:'You add comment by using /* and */ comment '
+            },
+            {
+                questionid:'3',
+                 answer : 'd',
+                
+                feedback:'Using the css syntax , define the property using the D option'
+            },
+            {
+                questionid:'4',
+                 answer : 'c',
+              
+                feedback:'image path goes to src attribute and alt is used when image does not exist. Correct Answer is C'
+            },
+            {
+                questionid:'5',
+                 answer : 'a',
+                
+                feedback:'correct answer is a. OL stands for ordered list'
+            },
+            {
+                questionid:'6',
+                 answer : 'a',
+              
+                feedback:'correct answer is a. Headings decrease in size from h1 to h6'
+            }  
+          ]
+         
+        const newAnswer  = {
+            questionid:'1',
+            user_answer : 'a',
+            correct:true,
+            feedback:'correct answer is a'
+        }  
+
+        let quiz = new Quiz({
+          title,description,question:questions,answer:answers
+        });
+  
+        // Encrypt password
+        await quiz.save();
+        // const id = quiz.id;
+
+       
+
+    
+        //   quiz.question.unshift(newQuestion);
+        //   await quiz.save();
+
+          res.json(quiz)
+  
+        
+      } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      }
+    }
+  );

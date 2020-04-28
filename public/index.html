@@ -1,0 +1,285 @@
+<html>
+  <head>
+    <title>Quiz Application</title>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <meta content="utf-8" http-equiv="encoding" />
+    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="./style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+  </head>
+  <body>
+    <div id="center" style="width: 300px; margin: 0 auto; margin-top: 100px;">
+      <label><h3>Choose Quiz</h3> </label>
+      <h1>
+        Score :
+        <span id="score" style="color: red; margin-right: 20px;">0</span>
+        <label id="minutes">00</label>:<label id="seconds">00</label>
+      </h1>
+      <hr />
+      <br />
+      <span id="dropdown"></span>
+    </div>
+    <div
+      id="finalize"
+      style="
+        display: none;
+        margin: 0 auto;
+        margin-top: 110px;
+        font-size: 25px;
+        text-align: center;
+      "
+    >
+      <h3>Quiz has been finished</h3>
+      <br />
+
+      <span id="final_score"></span><br />
+      <button onclick="restartQuiz()" class="startnew">
+        Start New Quiz</button
+      ><br />
+    </div>
+    <div id="page-wrap" style="display: none; margin-top: 110px;">
+      <h1 style="margin-left: 100px;" id="description"></h1>
+      <h3 style="margin-left: 100px;">
+        Total Questions : <span id="total_questions"></span>
+      </h3>
+
+      <form id="quiz" style="margin-left: 100px;">
+        <ol>
+          <li>
+            <span id="question_to_show"></span>
+          </li>
+        </ol>
+
+        <input
+          type="button"
+          class="nextbtn"
+          onclick="evaluatequestion()"
+          value="Next Question"
+        />
+      </form>
+    </div>
+    <div
+      id="finalize"
+      style="display: none; margin-top: 110px; margin-left: 100px;"
+    >
+      Quiz has been finished
+      <span id="final_score"></span>
+      <button onclick="restartQuiz()">Take Another Quiz</button>
+    </div>
+  </body>
+
+  <script>
+    var correct_score = 0;
+    var total = 0;
+    var timer;
+    $(document).ready(function () {
+      var quiz_id = null;
+      var question_id = null;
+      var next_question = null;
+      var type = true;
+
+      fetchQuizList();
+    });
+
+    // function to evaluate question on click 
+    function evaluatequestion(questionid) {
+      var user_answer = type
+        ? $("input[name=question_option]:checked").val()
+        : $("input[name=question_text]").val();
+
+      $.ajax({
+        url:
+          "http://localhost:5000/api/check_answer/" +
+          quiz_id +
+          "/" +
+          question_id +
+          "/" +
+          user_answer,
+        type: "GET",
+        contentType: "application/json",
+        success: function (response) {
+          if (response.correct === false) {
+            Swal.fire("Oops", "You answer is wrong", "error");
+          } else {
+            Swal.fire("Congratulations", "You answer is correct", "success");
+            evaluateResults();
+          }
+          console.log(response);
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          alert("error");
+        },
+      });
+
+      next_question !== "-1"
+        ? fetchQuestion(quiz_id, next_question)
+        : closeQuiz();
+    }
+
+    // function to show the score after question evaluation
+    function evaluateResults() {
+      correct_score = correct_score + 1;
+      if (next_question !== "-1") {
+        var span = document.createElement("span");
+        span.innerText = correct_score.toString();
+        document.getElementById("score").innerText = "";
+        document.getElementById("score").appendChild(span);
+        fetchQuestion(quiz_id, next_question);
+      }
+    }
+
+    // fetch the list of all quizzes
+    function fetchQuizList() {
+      $.ajax({
+        url: "http://localhost:5000/api/quiz/list",
+        type: "GET",
+        contentType: "application/json",
+        success: function (response) {
+          parseQuizList(response);
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          alert("error");
+        },
+      });
+    }
+
+    // fetch the quiz by id
+    function fetchQuizById(id) {
+      quiz_id = id;
+      $.ajax({
+        url: "http://localhost:5000/api/quiz/" + id,
+        type: "GET",
+        contentType: "application/json",
+        success: function (response) {
+          parseQuizHeader(response);
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          alert("error");
+        },
+      });
+
+      startTimer();
+      fetchQuestion(id, 1);
+    }
+
+    // fetch the question with quiz id and question id
+    function fetchQuestion(quizid, questionid) {
+      $.ajax({
+        url: "http://localhost:5000/api/quiz/" + quizid + "/" + questionid,
+        type: "GET",
+        contentType: "application/json",
+        success: function (response) {
+          question_id = response.questionid;
+          next_question = response.meta.next_question;
+          type = response.question_type === "multiple_choice" ? true : false;
+          type ? parseQuestion(response) : parseTextQuestion(response);
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          alert("error");
+        },
+      });
+    }
+
+    // onchange handler for quiz selection
+    function Onchange() {
+      var element = document.getElementById("quizlist");
+      if (element.selectedIndex !== 0) {
+        var selected = element.options[element.selectedIndex].value;
+        document.getElementById("page-wrap").style.display = "block";
+        fetchQuizById(selected);
+      }
+    }
+
+    // function to parse the textual question
+    function parseTextQuestion(response) {
+      var html = "";
+      html += "<div><h3>" + response.question + "</h3><br/>";
+      html +=
+        '<input type="text" style="width:250px; padding:10px;placeholder="Enter Answer"; margin:10px " name="question_text"/>';
+      html += "<div>";
+      document.getElementById("question_to_show").innerHTML = html;
+    }
+
+    // function to parse the quiz list dropdown
+    function parseQuizList(data) {
+      var html =
+        '<select onchange="Onchange()" id="quizlist"  class="select-css"> <option value="0">Select ....</option>';
+      for (var i = 0; i < data.length; i++) {
+        html +=
+          "<option value=" + data[i]._id + " >" + data[i].title + "</option>";
+      }
+      html += "</select>";
+      document.getElementById("dropdown").innerHTML = html;
+    }
+
+    // function to parse the quiz header
+    function parseQuizHeader(data) {
+      document.getElementById("quizlist").disabled = true;
+      document.getElementById("description").innerText = data.description;
+      document.getElementById("total_questions").innerText =
+        data.total_questions;
+    }
+
+    //function to parse the Multi-choice question
+    function parseQuestion(response) {
+      var html = "";
+      html += "<div><h3>" + response.question + "</h3>";
+      var options = ["A", "B", "C", "D"];
+      for (var i = 0; i < response.answer_options.length; i++) {
+        html +=
+          '<input type="radio"  data=' +
+          i +
+          ' name="question_option" id=""  value=' +
+          options[i] +
+          "  />";
+        html += ' <label for="question-1-answers-A">';
+        html += options[i] + ")";
+        html +=
+          '<code style="padding:10px">' +
+          response.answer_options[i] +
+          "</code>";
+        html += " </label>";
+        html += "<br/>";
+      }
+
+      html += " </div>";
+
+      document.getElementById("question_to_show").innerHTML = html;
+    }
+
+    // function to close the quiz after completition
+    function closeQuiz() {
+      document.getElementById("page-wrap").style.display = "none";
+      document.getElementById("finalize").style.display = "block";
+
+      document.getElementById("final_score").innerText =
+        "Your Final Score is : " + correct_score.toString();
+      clearInterval(timer);
+    }
+
+    // function to restart the quiz
+    function restartQuiz() {
+      location.reload();
+    }
+
+    // function to start the timer
+    function startTimer() {
+      timer = setInterval(function () {
+        ++total;
+
+        document.getElementById("seconds").innerHTML = pad(total % 60);
+        document.getElementById("minutes").innerHTML = pad(
+          parseInt(total / 60)
+        );
+      }, 1000);
+    }
+    function pad(val) {
+      var valString = val + "";
+      if (valString.length < 2) {
+        return "0" + valString;
+      } else {
+        return valString;
+      }
+    }
+  </script>
+</html>
